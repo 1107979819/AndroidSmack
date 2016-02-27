@@ -4,6 +4,9 @@ import android.app.Activity;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
+/**
+ * xmpp 通讯 Smack
+ */
 public class MainActivity extends Activity {
 
     @Override
