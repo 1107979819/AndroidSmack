@@ -20,6 +20,10 @@ import org.jivesoftware.smack.roster.RosterListener;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smackx.iqregister.AccountManager;
+import org.jivesoftware.smackx.search.ReportedData;
+import org.jivesoftware.smackx.search.UserSearch;
+import org.jivesoftware.smackx.search.UserSearchManager;
+import org.jivesoftware.smackx.xdata.Form;
 import org.jxmpp.jid.DomainBareJid;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
@@ -66,7 +70,7 @@ public class MainActivity extends Activity {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        roster();
+                        search();
                     }
                 }).start();
             }
@@ -284,20 +288,62 @@ public class MainActivity extends Activity {
             public void entriesAdded(Collection<Jid> addresses) {
                 Log.i("Test", "entriesAdded" + addresses.toString());
             }
+
             @Override
             public void entriesUpdated(Collection<Jid> addresses) {
                 Log.i("Test", "entriesUpdated" + addresses.toString());
             }
+
             @Override
             public void entriesDeleted(Collection<Jid> addresses) {
                 Log.i("Test", "entriesDeleted" + addresses.toString());
             }
+
             @Override
             public void presenceChanged(Presence presence) {
-                Log.i("Test", "presenceChanged" +  presence.toString());
+                Log.i("Test", "presenceChanged" + presence.toString());
             }
 
         });
+    }
+
+    /**
+     * 搜索用户
+     */
+    public void search()
+    {
+        Log.i("Test","  search() ");
+        try {
+            UserSearchManager search = new UserSearchManager(mConnection);
+
+            //注意这里服务器的写法。不一定是 “serach.域名” ，所以一定要是使用mConnection.getXMPPServiceDomain() 获取他的domain
+            DomainBareJid  xmppServiceDomain  =   (DomainBareJid) JidCreate.from("search."+mConnection.getXMPPServiceDomain());
+            Log.i(TAG,"domain"+mConnection.getXMPPServiceDomain());
+            Form  searchForm = search .getSearchForm( xmppServiceDomain);
+            Form answerForm = searchForm.createAnswerForm();
+            answerForm.setAnswer("Username", true);
+            answerForm.setAnswer("search","user");
+//        ReportedData data = search.getSearchResults(answerForm, "search." + mConnection.getServiceName());
+            ReportedData data = search.getSearchResults(answerForm, xmppServiceDomain);
+            if (data.getRows() != null) {
+                for (ReportedData.Row row: data.getRows()) {
+                    for (String value: row.getValues("jid")) {
+                        Log.i("Test"," " + value);
+                    }
+                }
+
+            }
+        } catch (SmackException.NoResponseException e) {
+            e.printStackTrace();
+        } catch (XMPPException.XMPPErrorException e) {
+            e.printStackTrace();
+        } catch (SmackException.NotConnectedException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (XmppStringprepException e) {
+            e.printStackTrace();
+        }
 
 
     }
