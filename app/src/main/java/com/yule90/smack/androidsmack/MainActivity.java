@@ -17,6 +17,7 @@ import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.roster.RosterEntry;
 import org.jivesoftware.smack.roster.RosterListener;
+import org.jivesoftware.smack.roster.packet.RosterPacket;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smackx.iqregister.AccountManager;
@@ -24,6 +25,7 @@ import org.jivesoftware.smackx.search.ReportedData;
 import org.jivesoftware.smackx.search.UserSearch;
 import org.jivesoftware.smackx.search.UserSearchManager;
 import org.jivesoftware.smackx.xdata.Form;
+import org.jxmpp.jid.BareJid;
 import org.jxmpp.jid.DomainBareJid;
 import org.jxmpp.jid.Jid;
 import org.jxmpp.jid.impl.JidCreate;
@@ -70,7 +72,7 @@ public class MainActivity extends Activity {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        search();
+                        roster();
                     }
                 }).start();
             }
@@ -83,18 +85,8 @@ public class MainActivity extends Activity {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        try {
-                            mConnection.login("user1", "123456");
-                            Log.i(TAG,"    mConnection.login(\"user1\", \"123456\");");
-                        } catch (XMPPException e) {
-                            e.printStackTrace();
-                        } catch (SmackException e) {
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+
+                        changePresence();
                     }
                 }).start();
 
@@ -286,17 +278,29 @@ public class MainActivity extends Activity {
         roster.addRosterListener(new RosterListener() {
             @Override
             public void entriesAdded(Collection<Jid> addresses) {
-                Log.i("Test", "entriesAdded" + addresses.toString());
+                Log.i("Test", "entriesAdded");
+                for (Jid entry : addresses) {
+                    Log.i("Test", "" + entry);
+                }
+                Log.i("Test", "entriesAdded======end");
             }
 
             @Override
             public void entriesUpdated(Collection<Jid> addresses) {
                 Log.i("Test", "entriesUpdated" + addresses.toString());
+                for (Jid entry : addresses) {
+                    Log.i("Test", "" + entry);
+                }
+                Log.i("Test", "entriesUpdated======end");
             }
 
             @Override
             public void entriesDeleted(Collection<Jid> addresses) {
                 Log.i("Test", "entriesDeleted" + addresses.toString());
+                for (Jid entry : addresses) {
+                    Log.i("Test", "" + entry);
+                }
+                Log.i("Test", "entriesDeleted======end");
             }
 
             @Override
@@ -312,7 +316,7 @@ public class MainActivity extends Activity {
      */
     public void search()
     {
-        Log.i("Test","  search() ");
+        Log.i("Test", "  search() ");
         try {
             UserSearchManager search = new UserSearchManager(mConnection);
 
@@ -322,7 +326,8 @@ public class MainActivity extends Activity {
             Form  searchForm = search .getSearchForm( xmppServiceDomain);
             Form answerForm = searchForm.createAnswerForm();
             answerForm.setAnswer("Username", true);
-            answerForm.setAnswer("search","user");
+//            answerForm.setAnswer("search","*"); //搜索所有用户
+            answerForm.setAnswer("search","user"); //搜索包含uesr的用户
 //        ReportedData data = search.getSearchResults(answerForm, "search." + mConnection.getServiceName());
             ReportedData data = search.getSearchResults(answerForm, xmppServiceDomain);
             if (data.getRows() != null) {
@@ -331,7 +336,6 @@ public class MainActivity extends Activity {
                         Log.i("Test"," " + value);
                     }
                 }
-
             }
         } catch (SmackException.NoResponseException e) {
             e.printStackTrace();
@@ -344,7 +348,74 @@ public class MainActivity extends Activity {
         } catch (XmppStringprepException e) {
             e.printStackTrace();
         }
+    }
 
+    /**
+     * 添加好友测试
+     */
+    public void  addFriend()
+    {
 
+        try {
+            Log.i(TAG, "addFriend");
+            Roster roster = Roster.getInstanceFor(mConnection);
+            BareJid user = (BareJid) JidCreate.from("user6@"+mConnection.getXMPPServiceDomain());
+            roster.createEntry(user,null,null);
+        } catch (SmackException.NotLoggedInException e) {
+            e.printStackTrace();
+        } catch (SmackException.NoResponseException e) {
+            e.printStackTrace();
+        } catch (XMPPException.XMPPErrorException e) {
+            e.printStackTrace();
+        } catch (SmackException.NotConnectedException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (XmppStringprepException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 删除好友
+     */
+    public void  delFried()
+    {
+        try {
+            Log.i(TAG, "delFriend");
+            Roster roster = Roster.getInstanceFor(mConnection);
+            BareJid user = (BareJid) JidCreate.from("user6@"+mConnection.getXMPPServiceDomain());
+            roster.removeEntry(roster.getEntry(user));
+        } catch (SmackException.NotLoggedInException e) {
+            e.printStackTrace();
+        } catch (SmackException.NoResponseException e) {
+            e.printStackTrace();
+        } catch (XMPPException.XMPPErrorException e) {
+            e.printStackTrace();
+        } catch (SmackException.NotConnectedException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (XmppStringprepException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 修改状态测试
+     */
+    public void changePresence()
+    {
+        Log.i(TAG, "changePresence()");
+        try {
+            Presence presence = new Presence(Presence.Type.unavailable);
+            presence.setStatus("在线");
+            presence.setType(Presence.Type.available);
+            mConnection.sendStanza(presence);
+        } catch (SmackException.NotConnectedException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
